@@ -1,29 +1,44 @@
-version: '3'
+version: '3.8'
 
 services:
-  app:
-    build: ./express-mariadb-project
-    container_name: express-app
-    ports:
-      - "3000:3000"
-    environment:
-      - DB_HOST=mariadb
-      - DB_USER=root
-      - DB_PASSWORD=example
-      - DB_NAME=mydatabase
-    depends_on:
-      - mariadb
-
-  mariadb:
-    image: mariadb:latest
-    container_name: mariadb
-    environment:
-      - MYSQL_ROOT_PASSWORD=example
-      - MYSQL_DATABASE=mydatabase
-    ports:
-      - "3306:3306"
+  mysqldb:
+    image: mysql:8.0
+    container_name: mysqlcontainer
+    command: --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
     volumes:
-      - db_data:/var/lib/mysql
+      - ./dbinit/init.sql:/docker-entrypoint-initdb.d/0_init.sql
+      - $HOME/database:/var/lib/mysql
+    ports:
+      - "3307:3306"  # Map host port 3307 to container port 3306
+    environment:
+      MYSQL_DATABASE: patientsdb
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: letmein
+      MYSQL_ROOT_PASSWORD: letmein
+    networks:
+      - internalnet
 
-volumes:
-  db_data:
+  nodeapp:
+    container_name: nodeappcontainer
+    build: .
+    volumes:
+      - $HOME/nodeapp:/code
+    ports:
+      - "3000:3000"  # Ensure Node.js is accessible on port 3000
+    environment:
+      DB_HOST: mysqldb
+      DB_PORT: 3306  # MySQL port inside the container remains 3306
+      DB_USER: 'admin'
+      DB_PASSWORD: 'letmein'
+      DB_NAME: patientsdb
+      DB_CONNECTION_LIMIT: 20
+      SERVER_PORT: 3000
+    depends_on:
+      - mysqldb
+    networks:
+      - internalnet
+
+networks:
+  internalnet:
+    driver: bridge
