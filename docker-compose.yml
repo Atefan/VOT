@@ -19,26 +19,59 @@ services:
     networks:
       - internalnet
 
+  frontend:
+    container_name: frontendcontainer
+    build: ./frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # Ensure node_modules is managed inside the container
+    ports:
+      - "3000:3000"  # Map host port 3000 to container port 3000
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:8000  # Point frontend to the backend
+    networks:
+      - internalnet
+
   nodeapp:
     container_name: nodeappcontainer
     build: ./backend
     volumes:
       - $HOME/nodeapp:/code
+      - /code/node_modules  # Ensure node_modules is managed inside the container
     ports:
-      - "3000:3000"  # Ensure Node.js is accessible on port 3000
+      - "8000:8000"  # Ensure Node.js is accessible on port 8000
     environment:
       DB_HOST: mysqldb
       DB_PORT: 3306  # MySQL port inside the container remains 3306
       DB_USER: 'admin'
       DB_PASSWORD: 'letmein'
-      DB_NAME: patientsdb
+      DB_NAME: usersdb
       DB_CONNECTION_LIMIT: 20
-      SERVER_PORT: 3000
+      SERVER_PORT: 8000
     depends_on:
       - mysqldb
     networks:
       - internalnet
 
+  keycloak:
+    image: jboss/keycloak:latest
+    container_name: keycloakcontainer
+    environment:
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=admin
+      - DB_VENDOR=mysql
+      - DB_ADDR=mysqldb
+      - DB_DATABASE=usersdb
+      - DB_USER=admin
+      - DB_PASSWORD=letmein
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysqldb
+    networks:
+      - internalnet
+      
 networks:
   internalnet:
     driver: bridge
