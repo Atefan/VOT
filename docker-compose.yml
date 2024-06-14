@@ -10,7 +10,7 @@ services:
       - ./dbinit/init.sql:/docker-entrypoint-initdb.d/0_init.sql
       - $HOME/database:/var/lib/mysql
     ports:
-      - "3307:3306"  # Map host port 3307 to container port 3306
+      - "3307:3306"
     environment:
       MYSQL_DATABASE: usersdb
       MYSQL_USER: admin
@@ -24,12 +24,12 @@ services:
     build: ./frontend
     volumes:
       - ./frontend:/app
-      - /app/node_modules  # Ensure node_modules is managed inside the container
+      - /app/node_modules
     ports:
-      - "3000:3000"  # Map host port 3000 to container port 3000
+      - "3000:3000"
     environment:
       - NODE_ENV=development
-      - REACT_APP_API_URL=http://localhost:8000  # Point frontend to the backend
+      - REACT_APP_API_URL=http://localhost:8000
     networks:
       - internalnet
 
@@ -38,12 +38,12 @@ services:
     build: ./backend
     volumes:
       - $HOME/nodeapp:/code
-      - /code/node_modules  # Ensure node_modules is managed inside the container
+      - /code/node_modules 
     ports:
-      - "8000:8000"  # Ensure Node.js is accessible on port 8000
+      - "8000:8000"
     environment:
       DB_HOST: mysqldb
-      DB_PORT: 3306  # MySQL port inside the container remains 3306
+      DB_PORT: 3306
       DB_USER: 'admin'
       DB_PASSWORD: 'letmein'
       DB_NAME: usersdb
@@ -71,7 +71,7 @@ services:
       - mysqldb
     networks:
       - internalnet
-      
+
 networks:
   internalnet:
     driver: bridge
